@@ -2,7 +2,7 @@ import requests
 import argparse
 import os
 
-def download_directory(url, path=""):
+def download_directory(base, url, path=""):
     r = requests.get(url, allow_redirects=True)
     wanted = r.text.split("tbody")[1].split("tbody")[0]
     size = len(r.text.split("tbody")[1].split("tbody")[0].split("<tr><td><p class=\"")) - 1
@@ -10,30 +10,39 @@ def download_directory(url, path=""):
     for i in range(1, size):
         filename = wanted.split("></td><td><a href=\"")[i].split("\"")[0]
         link = url + filename
-        
+        final_dl_link = url.replace("xref", "raw") + filename
+
+        os_path = url
+        os_path = os_path.replace(base, '')
+        if os_path:
+            os_path = os_path + filename
+        else:
+            os_path = filename
+
+        if not args.quiet:
+            print("ospath " + os_path)
+
         # It is a directory
         if link.endswith("/"):
             if args.recursive:
                 if not args.quiet:
                     print("Subdirectory : " + link)
-                if os.path.exists(filename):
+                if os.path.exists(os_path):
                     if not args.quiet:
-                        print(filename + " : EXISTS!")
+                        print(os_path + " : EXISTS!")
                 else:
-                    os.makedirs(filename)
+                    os.makedirs(os_path)
                     if not args.quiet:
-                        print(filename + " : CREATED!")
+                        print(os_path + " : CREATED!")
 
-                download_directory(link, filename)
+                download_directory(base, link, filename)
 
         # It is a file
         else:
-            final_dl_link = url.replace("xref", "raw") + filename
             if not args.quiet:
                 print("Downloading : " + final_dl_link)
-
             r1 = requests.get(final_dl_link, allow_redirects=True)
-            with open(path + filename, 'wb') as f:
+            with open(os_path, 'wb') as f:
                 f.write(r1.content)
 
 
@@ -57,4 +66,4 @@ url = args.opengrok_url
 if not url.endswith("/"):
     url = url + "/"
 
-download_directory(url)
+download_directory(url, url)
