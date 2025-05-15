@@ -8,3 +8,4 @@ Usage:
 Flags:
 -q for quiet mode
 -r for recursive download of subdirs
+[-u Username] for authentication
